@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  steam-scraper:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data          # Persist databases
+      - ./logs:/app/logs          # Persist logs
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-default-secret-key}
+      - DATABASE_PATH=/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Add PostgreSQL for production
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: steam_scraper
+      POSTGRES_USER: ${POSTGRES_USER:-steamuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-steampass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    profiles:
+      - production
+
+volumes:
+  postgres_data:

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Game Scraper - Web UI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <i class="fas fa-gamepad logo-icon"></i>
+                    <h1>Steam Game Scraper</h1>
+                </div>
+                <div class="status-indicator">
+                    <div id="connection-status" class="status-dot connected"></div>
+                    <span id="status-text">Connected</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="tab-button active" onclick="switchTab('scraper')">
+                    <i class="fas fa-search"></i>
+                    Scrape Games
+                </button>
+                <button class="tab-button" onclick="switchTab('search')">
+                    <i class="fas fa-database"></i>
+                    Search Database
+                </button>
+            </div>
+
+            <!-- Scraper Section -->
+            <div id="scraper-section" class="content-section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-cogs"></i> Game Scraper</h2>
+                    <p>Enter a Steam store URL to scrape game data</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Scraping Configuration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="steam-url">Steam Store URL</label>
+                            <input type="url" id="steam-url" placeholder="https://store.steampowered.com/search/?..." 
+                                   value="https://store.steampowered.com/search/?tags=492&supportedlang=english&filter=comingsoon&ndl=1">
+                            <small>Paste your Steam store search URL here</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preset-urls">Or select a preset category:</label>
+                            <div class="preset-buttons">
+                                <button type="button" class="btn btn-secondary btn-preset" onclick="setPresetUrl('https://store.steampowered.com/search/?tags=492&supportedlang=english&filter=comingsoon&ndl=1')">Indie Games</button>
+                                <button type="button" class="btn btn-secondary btn-preset" onclick="setPresetUrl('https://store.steampowered.com/search/?tags=122&supportedlang=english&ndl=1')">Action RPG</button>
+                                <button type="button" class="btn btn-secondary btn-preset" onclick="setPresetUrl('https://store.steampowered.com/search/?tags=9&supportedlang=english&ndl=1')">Strategy</button>
+                                <button type="button" class="btn btn-secondary btn-preset" onclick="setPresetUrl('https://store.steampowered.com/search/?tags=4182&supportedlang=english&ndl=1')">Single Player</button>
+                                <button type="button" class="btn btn-secondary btn-preset" onclick="setPresetUrl('https://store.steampowered.com/search/?filter=comingsoon&supportedlang=english&ndl=1')">Coming Soon</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="database-name">Database Name</label>
+                            <input type="text" id="database-name" placeholder="steam_games" value="steam_games">
+                            <small>Name for the database file (without .db extension)</small>
+                        </div>
+
+                        <div class="button-group">
+                            <button id="start-scraping" class="btn btn-primary" onclick="startScraping()">
+                                <i class="fas fa-play"></i>
+                                Start Scraping
+                            </button>
+                            <button id="pause-scraping" class="btn btn-warning" onclick="pauseScraping()" disabled>
+                                <i class="fas fa-pause"></i>
+                                Pause
+                            </button>
+                            <button id="stop-scraping" class="btn btn-danger" onclick="stopScraping()" disabled>
+                                <i class="fas fa-stop"></i>
+                                Stop Scraping
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div id="progress-section" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h3>Scraping Progress</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-info">
+                            <div class="progress-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Status:</span>
+                                    <span id="scraping-status" class="stat-value-small">Ready</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Current:</span>
+                                    <span id="current-game" class="stat-value-small">-</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Progress:</span>
+                                    <span id="progress-text" class="stat-value-small">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-container-large">
+                            <div class="progress-bar-large">
+                                <div id="progress-fill" class="progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Statistics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="total-games-count">0</div>
+                                <div class="stat-label">Total Games</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="existing-games-count">0</div>
+                                <div class="stat-label">Existing Games</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="new-games-count">0</div>
+                                <div class="stat-label">New Games</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Options for Scraper -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Export Options</h3>
+                        <div class="export-controls">
+                            <select id="scraper-export-format">
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                            <button id="export-data" class="btn btn-success btn-sm" onclick="exportScrapedData()">
+                                <i class="fas fa-download"></i>
+                                Export Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="export-description">
+                            <i class="fas fa-info-circle"></i>
+                            Export all scraped games from the selected database with complete information including tags.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div id="search-section" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-search"></i> Database Search</h2>
+                    <p>Search and filter games from your databases</p>
+                </div>
+
+                <!-- Database Selection -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Select Database</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="refreshDatabases()">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Manual Database Selection -->
+                        <div class="form-group">
+                            <label for="database-path">Database File Path:</label>
+                            <div class="file-input-group">
+                                <input type="text" id="database-path" placeholder="Select or enter database file path">
+                                <input type="file" id="database-file" accept=".db" style="display: none;" onchange="handleDatabaseFileSelect(event)">
+                                <button type="button" class="btn btn-secondary" onclick="document.getElementById('database-file').click()">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="connectToDatabase()">
+                                    <i class="fas fa-plug"></i> Connect
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Available Databases -->
+                        <div class="form-group">
+                            <label>Available Databases:</label>
+                            <div id="database-list" class="database-grid">
+                                <!-- Databases will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Filters -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Search Filters</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="start-date">Start Date</label>
+                                <input type="date" id="start-date">
+                            </div>
+                            <div class="form-group">
+                                <label for="end-date">End Date</label>
+                                <input type="date" id="end-date">
+                            </div>
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-primary" onclick="searchGames()">
+                                    <i class="fas fa-search"></i>
+                                    Search Games
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div id="search-results-section" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h3>Search Results</h3>
+                        <div class="export-controls">
+                            <select id="export-format">
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                            <button class="btn btn-success btn-sm" onclick="exportResults()">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="results-summary" class="results-summary"></div>
+                        <div class="table-container">
+                            <table id="results-table" class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>App ID</th>
+                                        <th>Name</th>
+                                        <th>Developer</th>
+                                        <th>Publisher</th>
+                                        <th>Release Date</th>
+                                        <th>Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-tbody">
+                                    <!-- Results will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Debug: Check if Socket.IO loaded
+        console.log('Socket.IO loaded:', typeof io !== 'undefined');
+        
+        // Debug: Test button click
+        function testButton() {
+            console.log('Button clicked!');
+            alert('Button is working!');
+        }
+        
+        // Add a simple test button click handler for debugging
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            const startBtn = document.getElementById('start-scraping');
+            if (startBtn) {
+                console.log('Start button found');
+                startBtn.addEventListener('click', function(e) {
+                    console.log('Start button clicked via event listener');
+                });
+            } else {
+                console.error('Start button not found!');
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

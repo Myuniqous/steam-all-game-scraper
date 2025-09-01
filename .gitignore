@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+
+# Database files (keep your scraped data private)
+*.db
+*.db-journal
+data/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Exports
+exports/
+*.csv
+*.json
+*.xlsx
+
+# ChromeDriver
+chromedriver.exe
+chromedriver
+
+# Temporary files
+temp/
+tmp/
