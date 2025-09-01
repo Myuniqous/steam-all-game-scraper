@@ -86,7 +86,7 @@ def is_steam_date_in_range(release_date, start_date_str, end_date_str):
 import glob
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'steam_scraper_secret_key_2024'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Configure logging
