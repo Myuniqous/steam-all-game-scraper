@@ -522,4 +522,4 @@ if __name__ == '__main__':
     print("📱 Access the application at: http://localhost:5000")
     print("🛑 Press Ctrl+C to stop the server")
     
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=False, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
