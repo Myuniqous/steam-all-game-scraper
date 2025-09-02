@@ -14,8 +14,6 @@ from bs4 import BeautifulSoup
 import requests
 import sqlite3
 from pathlib import Path
-import tkinter as tk
-from tkinter import ttk
 
 # Configure logging
 logging.basicConfig(
