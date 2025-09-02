@@ -3,7 +3,8 @@ Flask-SocketIO==5.3.6
 selenium==4.15.0
 beautifulsoup4==4.12.2
 requests==2.31.0
-pandas==2.1.1
+numpy==1.24.3
+pandas==2.0.3
 openpyxl==3.1.2
 python-socketio==5.9.0
 gunicorn==21.2.0
