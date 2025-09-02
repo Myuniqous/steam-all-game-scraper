@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, make_response
 from flask_socketio import SocketIO, emit
 import os
 import sqlite3
@@ -282,7 +282,7 @@ def search_games():
 
 @app.route('/api/export_database', methods=['POST'])
 def export_database():
-    """Export entire database to file"""
+    """Export entire database to file and serve as download"""
     try:
         data = request.json
         db_name = data.get('database')
@@ -309,32 +309,42 @@ def export_database():
         
         conn.close()
         
-        # Prepare data for export
-        output_path = f"{filename}.{format_type}"
-        
+        # Create file in memory and return as download
         if format_type == 'csv':
             import csv
-            output_path = f"{filename}.csv"
-            with open(output_path, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(columns)
-                writer.writerows(games)
+            import io
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(columns)
+            writer.writerows(games)
+            
+            response = make_response(output.getvalue())
+            response.headers['Content-Type'] = 'text/csv'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+            return response
                 
         elif format_type == 'json':
-            output_path = f"{filename}.json"
             json_data = []
             for row in games:
                 json_data.append(dict(zip(columns, row)))
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, indent=2, ensure_ascii=False)
+            
+            response = make_response(json.dumps(json_data, indent=2, ensure_ascii=False))
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}.json"'
+            return response
                 
         elif format_type == 'excel':
             import pandas as pd
-            output_path = f"{filename}.xlsx"
+            import io
+            output = io.BytesIO()
             df = pd.DataFrame(games, columns=columns)
-            df.to_excel(output_path, index=False, engine='openpyxl')
+            df.to_excel(output, index=False, engine='openpyxl')
+            output.seek(0)
             
-        return jsonify({'message': f'Successfully exported to {output_path}', 'filename': output_path})
+            response = make_response(output.getvalue())
+            response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+            return response
         
     except Exception as e:
         logger.error(f"Database export error: {e}")
@@ -342,7 +352,7 @@ def export_database():
 
 @app.route('/api/export_search_results', methods=['POST'])
 def export_search_results():
-    """Export search results with complete database fields"""
+    """Export search results with complete database fields and serve as download"""
     try:
         data = request.json
         db_name = data.get('database')
@@ -377,30 +387,42 @@ def export_search_results():
         
         conn.close()
         
-        # Prepare data for export
+        # Create file in memory and return as download
         if format_type == 'csv':
             import csv
-            output_path = f"{filename}.csv"
-            with open(output_path, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(columns)
-                writer.writerows(games)
+            import io
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(columns)
+            writer.writerows(games)
+            
+            response = make_response(output.getvalue())
+            response.headers['Content-Type'] = 'text/csv'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+            return response
                 
         elif format_type == 'json':
-            output_path = f"{filename}.json"
             json_data = []
             for row in games:
                 json_data.append(dict(zip(columns, row)))
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, indent=2, ensure_ascii=False)
+            
+            response = make_response(json.dumps(json_data, indent=2, ensure_ascii=False))
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}.json"'
+            return response
                 
         elif format_type == 'excel':
             import pandas as pd
-            output_path = f"{filename}.xlsx"
+            import io
+            output = io.BytesIO()
             df = pd.DataFrame(games, columns=columns)
-            df.to_excel(output_path, index=False, engine='openpyxl')
+            df.to_excel(output, index=False, engine='openpyxl')
+            output.seek(0)
             
-        return jsonify({'message': f'Successfully exported {len(games)} games to {output_path}', 'filename': output_path})
+            response = make_response(output.getvalue())
+            response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+            return response
         
     except Exception as e:
         logger.error(f"Search results export error: {e}")

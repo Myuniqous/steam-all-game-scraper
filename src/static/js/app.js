@@ -259,7 +259,7 @@ class SteamScraperUI {
         const filename = `${dbName}_${startDateFormatted}_to_${endDateFormatted}`;
 
         try {
-            this.showToast('Exporting', 'Exporting search results with full data...', 'info');
+            this.showToast('Exporting', 'Preparing your download...', 'info');
             
             // Get app_ids from search results
             const appIds = this.searchResults.map(game => game.app_id);
@@ -283,12 +283,35 @@ class SteamScraperUI {
                 throw new Error('Export failed');
             }
 
-            const result = await response.json();
-            this.showToast('Export Complete', `Exported to ${result.filename}`, 'success');
+            // Check if response is a file download
+            const contentDisposition = response.headers.get('Content-Disposition');
+            if (contentDisposition) {
+                // It's a file download - create blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Extract filename from Content-Disposition header
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                const downloadFilename = filenameMatch ? filenameMatch[1] : `${filename}.${format}`;
+                
+                a.download = downloadFilename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                this.showToast('Download Started', `Your file ${downloadFilename} is downloading`, 'success');
+            } else {
+                // Handle error response
+                const result = await response.json();
+                throw new Error(result.error || 'Unknown error');
+            }
             
         } catch (error) {
             console.error('Export error:', error);
-            this.showToast('Error', 'Export failed', 'error');
+            this.showToast('Error', 'Export failed: ' + error.message, 'error');
         }
     }
 
@@ -400,7 +423,7 @@ class SteamScraperUI {
     
     async exportDatabaseData(exportData) {
         try {
-            this.showToast('Exporting', 'Exporting database data...', 'info');
+            this.showToast('Exporting', 'Preparing your download...', 'info');
             
             const response = await fetch('/api/export_database', {
                 method: 'POST',
@@ -414,12 +437,35 @@ class SteamScraperUI {
                 throw new Error('Export failed');
             }
 
-            const result = await response.json();
-            this.showToast('Export Complete', `Exported to ${result.filename}`, 'success');
+            // Check if response is a file download
+            const contentDisposition = response.headers.get('Content-Disposition');
+            if (contentDisposition) {
+                // It's a file download - create blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Extract filename from Content-Disposition header
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                const filename = filenameMatch ? filenameMatch[1] : `${exportData.filename}.${exportData.format}`;
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                this.showToast('Download Started', `Your file ${filename} is downloading`, 'success');
+            } else {
+                // Handle error response
+                const result = await response.json();
+                throw new Error(result.error || 'Unknown error');
+            }
             
         } catch (error) {
             console.error('Export error:', error);
-            this.showToast('Error', 'Export failed', 'error');
+            this.showToast('Error', 'Export failed: ' + error.message, 'error');
         }
     }
 
